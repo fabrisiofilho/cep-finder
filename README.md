@@ -23,3 +23,20 @@ Não temos retrição, e publico, então apenas um get sem precisar passar nada 
 
 
 Implantar um sistema de retorno de erro, que atualmente retorna nada se não encontrar nenhum Cep.
+
+---
+
+<!-- github-standardizer:start -->
+## Overview
+
+Brazilian postal code lookup integration using CEP APIs.
+
+## Technology indicators
+
+- Java / Maven
+
+## Getting started
+
+Check the project manifests and existing documentation for supported setup commands. No installation instructions were inferred.
+
+<!-- github-standardizer:end -->
