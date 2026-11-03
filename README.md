@@ -2,6 +2,8 @@
 
 Consulte endereços brasileiros por CEP. A página inicial reúne um formulário de busca, um painel de resultados e a documentação da API.
 
+[Abra o CEP Finder online](https://cep-finder.onrender.com/). O primeiro acesso após um período sem uso pode levar cerca de um minuto.
+
 ## Executar localmente
 
 Com Java 17 e Maven instalados:
