@@ -2,93 +2,70 @@ package br.com.fabrisio.cepapi.service.impl;
 
 import br.com.fabrisio.cepapi.dto.Cep;
 import br.com.fabrisio.cepapi.dto.CepViaCep;
-import br.com.fabrisio.cepapi.dto.CepWidenet;
-import br.com.fabrisio.cepapi.exceptions.CepExpetion;
-import br.com.fabrisio.cepapi.exceptions.RequestException;
 import br.com.fabrisio.cepapi.service.CepService;
-import br.com.fabrisio.cepapi.utils.Util;
 import com.google.gson.Gson;
-import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Objects;
+import java.time.Duration;
 
 @Service
-@Slf4j
 public class CepServiceImpl implements CepService {
 
-    private String VIA_CEP = "http://viacep.com.br/ws/";
-    private String WIDENET = "https://ws.apicep.com/cep/";
+    private static final String VIA_CEP = "https://viacep.com.br/ws/{cep}/json/";
+
+    private final Gson gson = new Gson();
+    private final RestTemplate client;
+
+    public CepServiceImpl(RestTemplateBuilder builder) {
+        client = builder.setConnectTimeout(Duration.ofSeconds(3))
+                .setReadTimeout(Duration.ofSeconds(5))
+                .build();
+    }
 
     @Override
     public Cep search(String cep) {
-        Cep cepReturn = find(cep);
-        if (Objects.nonNull(cepReturn)) {
-            cepReturn.setCep(cepReturn.getCep().replace("-", ""));
+        if (cep == null || !cep.matches("[0-9]{5}-[0-9]{3}")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o CEP no formato 00000-000");
         }
-        return cepReturn;
-    }
 
-    private Cep find(String cep) {
-        ModelMapper modelMapper = new ModelMapper();
+        String digits = cep.replace("-", "");
+        JsonObject payload;
         try {
-            log.info("Começando processo de procura por Widenet");
-            return modelMapper.map(findByViaCep(cep), Cep.class);
-        } catch(Exception e) {
-            log.info("Começando processo de procura por ViaCep");
-            return findByWidenet(cep).toCep();
+            String response = client.getForObject(VIA_CEP, String.class, digits);
+            payload = gson.fromJson(response, JsonObject.class);
+        } catch (RestClientException | JsonParseException exception) {
+            throw unavailable(exception);
         }
-    }
 
-    private CepViaCep findByViaCep(String cep) {
-        String url = VIA_CEP + cep.replace("-", "") + "/json/";
-        Gson gson = new Gson();
+        if (payload != null && payload.has("erro") && payload.get("erro").isJsonPrimitive()
+                && payload.get("erro").getAsBoolean()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CEP não encontrado");
+        }
+
+        CepViaCep address;
         try {
-            CepViaCep json = gson.fromJson(request(url), CepViaCep.class);
-            if (json.isErro()) {
-                throw new CepExpetion("Não foi encontrado nenhum registro");
-            }
-            return json;
-        }catch(Exception e) {
-            log.error("Cep não encontrado no ViaCep");
-            throw new CepExpetion("Erro : " + e.getMessage());
+            address = gson.fromJson(payload, CepViaCep.class);
+        } catch (JsonParseException exception) {
+            throw unavailable(exception);
         }
+        if (address == null || address.getCep() == null || !digits.equals(address.getCep().replace("-", ""))
+                || address.getLocalidade() == null || address.getLocalidade().isBlank()
+                || address.getUf() == null || !address.getUf().matches("[A-Z]{2}")) {
+            throw unavailable(null);
+        }
+
+        return new Cep(digits, address.getLogradouro(), address.getComplemento(),
+                address.getBairro(), address.getLocalidade(), address.getUf());
     }
 
-    private CepWidenet findByWidenet(String cep) {
-        String url = WIDENET + cep + ".json";
-        Gson gson = new Gson();
-        try{
-            CepWidenet json = gson.fromJson(request(url), CepWidenet.class);
-            if (json.getStatus().equals(404)) {
-                throw new CepExpetion("Não foi encontrado nenhum registro");
-            }
-            return json;
-        } catch (Exception e) {
-            log.error("Cep não encontrado no Widenet");
-            throw new CepExpetion("Erro : " + e.getMessage());
-        }
+    private ResponseStatusException unavailable(Exception cause) {
+        return new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Falha no provedor de CEP", cause);
     }
-
-    private String request(String url) {
-        try {
-            URL urlRequest = new URL(url);
-
-            HttpURLConnection conexao = (HttpURLConnection) urlRequest.openConnection();
-
-            if (conexao.getResponseCode() != 200)
-                throw new RequestException("HTTP error code : " + conexao.getResponseCode());
-
-            BufferedReader resposta = new BufferedReader(new InputStreamReader((conexao.getInputStream())));
-            return Util.converteJsonEmString(resposta);
-        } catch(Exception e) {
-            throw new CepExpetion("Erro : " + e.getMessage());
-        }
-    }
-
 }

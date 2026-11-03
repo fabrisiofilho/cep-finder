@@ -2,7 +2,6 @@ package br.com.fabrisio.cepapi.controller;
 
 import br.com.fabrisio.cepapi.dto.Cep;
 import br.com.fabrisio.cepapi.service.CepService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin
@@ -10,8 +9,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/cep.api")
 public class CepController {
 
-    @Autowired
-    private CepService cepService;
+    private final CepService cepService;
+
+    public CepController(CepService cepService) {
+        this.cepService = cepService;
+    }
 
     @GetMapping("/{cep}")
     public Cep getCEP(@PathVariable String cep){

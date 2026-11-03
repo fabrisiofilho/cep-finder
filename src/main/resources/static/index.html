@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Consulte endereços brasileiros por CEP e explore a API do CEP Finder.">
+  <title>CEP Finder | Consulta de endereços</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="wrap">
+    <a class="brand" href="#">CEP<span>.</span>Finder</a>
+    <nav aria-label="Navegação principal">
+      <a href="#consulta">Consulta</a>
+      <a href="#api">API</a>
+      <a class="source" href="https://github.com/fabrisiofilho/cep-finder">GitHub ↗</a>
+    </nav>
+  </header>
+  <main class="wrap">
+    <section class="hero" id="consulta" aria-labelledby="title">
+      <div>
+        <p class="eyebrow">● PROJETO / 01 — BRASIL</p>
+        <h1 id="title">Encontre qualquer<br><span>CEP do Brasil.</span></h1>
+        <p class="intro">Digite um CEP para consultar o endereço ou explore a API para integrar a busca ao seu projeto.</p>
+        <form id="lookup">
+          <label for="cep">Código de Endereçamento Postal</label>
+          <div class="controls">
+            <input id="cep" name="cep" inputmode="numeric" placeholder="00000-000" required maxlength="9" pattern="[0-9]{5}-[0-9]{3}" title="Informe o CEP no formato 00000-000" aria-describedby="cep-hint">
+            <button type="submit">Buscar CEP <span aria-hidden="true">↗</span></button>
+          </div>
+          <small id="cep-hint">Formato obrigatório 00000-000.</small><br><button id="example" class="example" type="button">Testar com 01001-000</button>
+        </form>
+      </div>
+      <div class="panel">
+        <div class="panel-top"><span>TERMINAL / ENDEREÇO</span><span class="indicator">● BR</span></div>
+        <div class="terminal">
+          <div class="radar" aria-hidden="true"><span>⌖</span></div>
+          <p id="status" role="status">Aguardando consulta</p>
+          <dl id="result" hidden></dl>
+        </div>
+        <div class="panel-bottom"><span>CEP FINDER</span><span>CONSULTA POSTAL</span></div>
+      </div>
+    </section>
+    <section id="api" aria-labelledby="api-title">
+      <p class="eyebrow">02 / REFERÊNCIA</p>
+      <h2 id="api-title">Documentação da API</h2>
+      <div class="docs">
+        <article class="panel">
+          <h3>Consultar endereço</h3>
+          <p><code>GET /cep.api/{cep}</code></p>
+          <p>Use o formato 00000-000, com hífen. A resposta é em JSON e a rota dispensa autenticação.</p>
+          <pre><code>curl http://localhost:8080/cep.api/01001-000</code></pre>
+          <dl class="codes">
+            <dt>200</dt><dd>Endereço encontrado</dd>
+            <dt>400</dt><dd>CEP com formato inválido · <code>INVALID_CEP</code></dd>
+            <dt>404</dt><dd>CEP não encontrado · <code>CEP_NOT_FOUND</code></dd>
+            <dt>502</dt><dd>Falha no provedor · <code>PROVIDER_UNAVAILABLE</code></dd>
+          </dl>
+        </article>
+        <article class="panel">
+          <h3>Exemplo de resposta</h3>
+          <pre><code>{
+  "cep": "01001000",
+  "logradouro": "Praça da Sé",
+  "complemento": "lado ímpar",
+  "bairro": "Sé",
+  "localidade": "São Paulo",
+  "uf": "SP"
+}</code></pre>
+        </article>
+      </div>
+    </section>
+  </main>
+  <footer class="wrap"><span>CEP Finder · Fabrísio Filho</span><a href="#consulta">Voltar à consulta ↑</a></footer>
+</body>
+</html>
